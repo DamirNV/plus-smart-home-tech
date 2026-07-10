@@ -13,7 +13,7 @@ import ru.yandex.practicum.collector.service.KafkaEventProducer;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/hubs")
+@RequestMapping("/events/hubs")
 @RequiredArgsConstructor
 public class HubController {
 
@@ -22,14 +22,16 @@ public class HubController {
 
     @PostMapping
     public void collectHubEvent(@Valid @RequestBody HubEvent event) {
-        log.info("Получено событие от хаба: {}", event);
+        log.info("🔵 ПОЛУЧЕНО СОБЫТИЕ ОТ ХАБА: {}", event);
 
         try {
             var avroEvent = hubEventMapper.toAvro(event);
+            log.info("🟡 СКОНВЕРТИРОВАНО В AVRO: {}", avroEvent);
+
             kafkaEventProducer.sendHubEvent(avroEvent);
-            log.debug("Событие успешно отправлено в Kafka");
+            log.info("✅ СОБЫТИЕ УСПЕШНО ОТПРАВЛЕНО В KAFKA");
         } catch (Exception e) {
-            log.error("Ошибка при обработке события хаба: {}", e.getMessage(), e);
+            log.error("❌ ОШИБКА ПРИ ОБРАБОТКЕ: {}", e.getMessage(), e);
             throw new RuntimeException("Ошибка при обработке события хаба", e);
         }
     }

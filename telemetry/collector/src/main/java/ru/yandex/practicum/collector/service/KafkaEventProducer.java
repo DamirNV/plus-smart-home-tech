@@ -38,19 +38,21 @@ public class KafkaEventProducer {
     }
 
     private void sendEvent(String topic, SpecificRecordBase event) {
+        log.info("📤 Начинаю отправку в топик: {}", topic);
         try {
             byte[] data = serializeAvro(event);
-            CompletableFuture<SendResult<String, byte[]>> future = kafkaTemplate.send(topic, data);
+            log.info("📦 Данные сериализованы, размер: {} байт", data.length);
 
-            future.whenComplete((result, ex) -> {
-                if (ex == null) {
-                    log.debug("Событие успешно отправлено в топик {}: {}", topic, event);
-                } else {
-                    log.error("Ошибка при отправке события в топик {}: {}", topic, ex.getMessage(), ex);
-                }
-            });
+            kafkaTemplate.send(topic, data)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("✅ Успешно отправлено в топик: {}", topic);
+                        } else {
+                            log.error("❌ Ошибка отправки в топик {}: {}", topic, ex.getMessage(), ex);
+                        }
+                    });
         } catch (Exception e) {
-            log.error("Ошибка при сериализации события: {}", e.getMessage(), e);
+            log.error("❌ Ошибка при отправке: {}", e.getMessage(), e);
         }
     }
 

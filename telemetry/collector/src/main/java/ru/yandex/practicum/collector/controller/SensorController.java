@@ -13,7 +13,7 @@ import ru.yandex.practicum.collector.service.KafkaEventProducer;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/sensors")
+@RequestMapping("/events/sensors")
 @RequiredArgsConstructor
 public class SensorController {
 
@@ -22,14 +22,16 @@ public class SensorController {
 
     @PostMapping
     public void collectSensorEvent(@Valid @RequestBody SensorEvent event) {
-        log.info("Получено событие от датчика: {}", event);
+        log.info("🔵 ПОЛУЧЕНО СОБЫТИЕ ОТ ДАТЧИКА: {}", event);
 
         try {
             var avroEvent = sensorEventMapper.toAvro(event);
+            log.info("🟡 СКОНВЕРТИРОВАНО В AVRO: {}", avroEvent);
+
             kafkaEventProducer.sendSensorEvent(avroEvent);
-            log.debug("Событие успешно отправлено в Kafka");
+            log.info("✅ СОБЫТИЕ УСПЕШНО ОТПРАВЛЕНО В KAFKA");
         } catch (Exception e) {
-            log.error("Ошибка при обработке события датчика: {}", e.getMessage(), e);
+            log.error("❌ ОШИБКА ПРИ ОБРАБОТКЕ: {}", e.getMessage(), e);
             throw new RuntimeException("Ошибка при обработке события датчика", e);
         }
     }
