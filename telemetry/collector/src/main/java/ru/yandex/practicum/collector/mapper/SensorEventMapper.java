@@ -16,48 +16,48 @@ public class SensorEventMapper {
         switch (event.getType()) {
             case CLIMATE_SENSOR_EVENT:
                 ClimateSensorEvent climateEvent = (ClimateSensorEvent) event;
-                ClimateSensorAvro climateAvro = ClimateSensorAvro.newBuilder()
+                builder.setEventType(SensorEventTypeAvro.CLIMATE);
+                builder.setPayload(ClimateSensorAvro.newBuilder()
                         .setTemperatureC(climateEvent.getTemperatureC())
                         .setHumidity(climateEvent.getHumidity())
                         .setCo2Level(climateEvent.getCo2Level())
-                        .build();
-                builder.setPayload(climateAvro);
+                        .build());
                 break;
 
             case LIGHT_SENSOR_EVENT:
                 LightSensorEvent lightEvent = (LightSensorEvent) event;
-                LightSensorAvro lightAvro = LightSensorAvro.newBuilder()
+                builder.setEventType(SensorEventTypeAvro.LIGHT);
+                builder.setPayload(LightSensorAvro.newBuilder()
                         .setLinkQuality(lightEvent.getLinkQuality())
                         .setLuminosity(lightEvent.getLuminosity())
-                        .build();
-                builder.setPayload(lightAvro);
+                        .build());
                 break;
 
             case MOTION_SENSOR_EVENT:
                 MotionSensorEvent motionEvent = (MotionSensorEvent) event;
-                MotionSensorAvro motionAvro = MotionSensorAvro.newBuilder()
+                builder.setEventType(SensorEventTypeAvro.MOTION);
+                builder.setPayload(MotionSensorAvro.newBuilder()
                         .setLinkQuality(motionEvent.getLinkQuality())
                         .setMotion(motionEvent.isMotion())
                         .setVoltage(motionEvent.getVoltage())
-                        .build();
-                builder.setPayload(motionAvro);
+                        .build());
                 break;
 
             case SWITCH_SENSOR_EVENT:
                 SwitchSensorEvent switchEvent = (SwitchSensorEvent) event;
-                SwitchSensorAvro switchAvro = SwitchSensorAvro.newBuilder()
+                builder.setEventType(SensorEventTypeAvro.SWITCH);
+                builder.setPayload(SwitchSensorAvro.newBuilder()
                         .setState(switchEvent.isState())
-                        .build();
-                builder.setPayload(switchAvro);
+                        .build());
                 break;
 
             case TEMPERATURE_SENSOR_EVENT:
                 TemperatureSensorEvent tempEvent = (TemperatureSensorEvent) event;
-                TemperatureSensorAvro tempAvro = TemperatureSensorAvro.newBuilder()
+                builder.setEventType(SensorEventTypeAvro.TEMPERATURE);
+                builder.setPayload(TemperatureSensorAvro.newBuilder()
                         .setTemperatureC(tempEvent.getTemperatureC())
                         .setTemperatureF(tempEvent.getTemperatureF())
-                        .build();
-                builder.setPayload(tempAvro);
+                        .build());
                 break;
 
             default:
