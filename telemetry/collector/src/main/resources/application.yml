@@ -14,6 +14,9 @@ spring:
         retries: 5
         delivery.timeout.ms: 120000
         request.timeout.ms: 30000
+      topic:
+        sensors: telemetry.sensors.v1
+        hubs: telemetry.hubs.v1
 
 server:
   port: 8080
