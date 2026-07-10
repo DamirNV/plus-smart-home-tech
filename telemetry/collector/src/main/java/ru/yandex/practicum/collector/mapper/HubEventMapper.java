@@ -65,6 +65,100 @@ public class HubEventMapper {
         return builder.build();
     }
 
-    // Остальные методы (mapDeviceType, mapCondition, mapAction и т.д.) остаются без изменений
-    // ...
+    private DeviceTypeAvro mapDeviceType(DeviceType deviceType) {
+        switch (deviceType) {
+            case MOTION_SENSOR:
+                return DeviceTypeAvro.MOTION_SENSOR;
+            case TEMPERATURE_SENSOR:
+                return DeviceTypeAvro.TEMPERATURE_SENSOR;
+            case LIGHT_SENSOR:
+                return DeviceTypeAvro.LIGHT_SENSOR;
+            case CLIMATE_SENSOR:
+                return DeviceTypeAvro.CLIMATE_SENSOR;
+            case SWITCH_SENSOR:
+                return DeviceTypeAvro.SWITCH_SENSOR;
+            default:
+                throw new IllegalArgumentException("Неизвестный тип устройства: " + deviceType);
+        }
+    }
+
+    private ScenarioConditionAvro mapCondition(ScenarioCondition condition) {
+        ScenarioConditionAvro.Builder builder = ScenarioConditionAvro.newBuilder();
+        builder.setSensorId(condition.getSensorId());
+        builder.setType(mapConditionType(condition.getType()));
+        builder.setOperation(mapConditionOperation(condition.getOperation()));
+
+        Object value = condition.getValue();
+        if (value instanceof Integer) {
+            builder.setValue((Integer) value);
+        } else if (value instanceof Boolean) {
+            builder.setValue((Boolean) value);
+        } else {
+            builder.setValue(null);
+        }
+
+        return builder.build();
+    }
+
+    private ConditionTypeAvro mapConditionType(ConditionType conditionType) {
+        switch (conditionType) {
+            case MOTION:
+                return ConditionTypeAvro.MOTION;
+            case LUMINOSITY:
+                return ConditionTypeAvro.LUMINOSITY;
+            case SWITCH:
+                return ConditionTypeAvro.SWITCH;
+            case TEMPERATURE:
+                return ConditionTypeAvro.TEMPERATURE;
+            case CO2LEVEL:
+                return ConditionTypeAvro.CO2LEVEL;
+            case HUMIDITY:
+                return ConditionTypeAvro.HUMIDITY;
+            default:
+                throw new IllegalArgumentException("Неизвестный тип условия: " + conditionType);
+        }
+    }
+
+    private ConditionOperationAvro mapConditionOperation(ConditionOperation operation) {
+        switch (operation) {
+            case EQUALS:
+                return ConditionOperationAvro.EQUALS;
+            case GREATER_THAN:
+                return ConditionOperationAvro.GREATER_THAN;
+            case LOWER_THAN:
+                return ConditionOperationAvro.LOWER_THAN;
+            default:
+                throw new IllegalArgumentException("Неизвестная операция: " + operation);
+        }
+    }
+
+    private DeviceActionAvro mapAction(DeviceAction action) {
+        DeviceActionAvro.Builder builder = DeviceActionAvro.newBuilder();
+        builder.setSensorId(action.getSensorId());
+        builder.setType(mapActionType(action.getType()));
+
+        Integer value = action.getValue();
+        if (value != null) {
+            builder.setValue(value);
+        } else {
+            builder.setValue(null);
+        }
+
+        return builder.build();
+    }
+
+    private ActionTypeAvro mapActionType(ActionType actionType) {
+        switch (actionType) {
+            case ACTIVATE:
+                return ActionTypeAvro.ACTIVATE;
+            case DEACTIVATE:
+                return ActionTypeAvro.DEACTIVATE;
+            case INVERSE:
+                return ActionTypeAvro.INVERSE;
+            case SET_VALUE:
+                return ActionTypeAvro.SET_VALUE;
+            default:
+                throw new IllegalArgumentException("Неизвестный тип действия: " + actionType);
+        }
+    }
 }
