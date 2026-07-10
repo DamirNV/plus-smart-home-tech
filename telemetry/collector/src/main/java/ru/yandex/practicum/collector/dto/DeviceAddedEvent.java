@@ -15,5 +15,5 @@ public class DeviceAddedEvent extends HubEvent {
     private String id;
 
     @NotNull(message = "Тип устройства не может быть null")
-    private DeviceType type;
+    private DeviceType deviceType;
 }

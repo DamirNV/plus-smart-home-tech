@@ -2,12 +2,18 @@ package ru.yandex.practicum.collector.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -33,7 +39,7 @@ public class KafkaEventProducer {
 
     private void sendEvent(String topic, SpecificRecordBase event) {
         try {
-            byte[] data = event.toByteBuffer().array();
+            byte[] data = serializeAvro(event);
             CompletableFuture<SendResult<String, byte[]>> future = kafkaTemplate.send(topic, data);
 
             future.whenComplete((result, ex) -> {
@@ -45,6 +51,16 @@ public class KafkaEventProducer {
             });
         } catch (Exception e) {
             log.error("Ошибка при сериализации события: {}", e.getMessage(), e);
+        }
+    }
+
+    private byte[] serializeAvro(SpecificRecordBase record) throws IOException {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            DatumWriter<SpecificRecordBase> writer = new SpecificDatumWriter<>(record.getSchema());
+            BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(outputStream, null);
+            writer.write(record, encoder);
+            encoder.flush();
+            return outputStream.toByteArray();
         }
     }
 }
