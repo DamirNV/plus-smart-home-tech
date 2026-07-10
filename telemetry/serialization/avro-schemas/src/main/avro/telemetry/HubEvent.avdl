@@ -63,9 +63,17 @@ protocol HubEventProtocol {
         string name;
     }
 
+    enum HubEventTypeAvro {
+        DEVICE_ADDED,
+        DEVICE_REMOVED,
+        SCENARIO_ADDED,
+        SCENARIO_REMOVED
+    }
+
     record HubEventAvro {
         string hub_id;
         long timestamp;
+        HubEventTypeAvro event_type;  // 👈 Явный тип события
         union {
             null,
             DeviceAddedEventAvro,

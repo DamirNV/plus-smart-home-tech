@@ -27,10 +27,19 @@ protocol SensorEventProtocol {
         int temperature_f;
     }
 
+    enum SensorEventTypeAvro {
+        CLIMATE,
+        LIGHT,
+        MOTION,
+        SWITCH,
+        TEMPERATURE
+    }
+
     record SensorEventAvro {
         string id;
         string hub_id;
         long timestamp;
+        SensorEventTypeAvro event_type;  // 👈 Явный тип события
         union {
             null,
             ClimateSensorAvro,
