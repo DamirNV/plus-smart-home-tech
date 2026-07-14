@@ -16,6 +16,7 @@ public class SensorEventMapper {
         switch (event.getType()) {
             case CLIMATE_SENSOR_EVENT:
                 ClimateSensorEvent climateEvent = (ClimateSensorEvent) event;
+                builder.setEventType(SensorEventTypeAvro.CLIMATE);
                 builder.setPayload(ClimateSensorAvro.newBuilder()
                         .setCo2Level(climateEvent.getCo2Level())
                         .setHumidity(climateEvent.getHumidity())
@@ -25,6 +26,7 @@ public class SensorEventMapper {
 
             case LIGHT_SENSOR_EVENT:
                 LightSensorEvent lightEvent = (LightSensorEvent) event;
+                builder.setEventType(SensorEventTypeAvro.LIGHT);
                 builder.setPayload(LightSensorAvro.newBuilder()
                         .setLuminosity(lightEvent.getLuminosity())
                         .setLinkQuality(lightEvent.getLinkQuality())
@@ -33,6 +35,7 @@ public class SensorEventMapper {
 
             case MOTION_SENSOR_EVENT:
                 MotionSensorEvent motionEvent = (MotionSensorEvent) event;
+                builder.setEventType(SensorEventTypeAvro.MOTION);
                 builder.setPayload(MotionSensorAvro.newBuilder()
                         .setVoltage(motionEvent.getVoltage())
                         .setMotion(motionEvent.isMotion())
@@ -42,6 +45,7 @@ public class SensorEventMapper {
 
             case SWITCH_SENSOR_EVENT:
                 SwitchSensorEvent switchEvent = (SwitchSensorEvent) event;
+                builder.setEventType(SensorEventTypeAvro.SWITCH);
                 builder.setPayload(SwitchSensorAvro.newBuilder()
                         .setState(switchEvent.isState())
                         .build());
@@ -49,6 +53,7 @@ public class SensorEventMapper {
 
             case TEMPERATURE_SENSOR_EVENT:
                 TemperatureSensorEvent tempEvent = (TemperatureSensorEvent) event;
+                builder.setEventType(SensorEventTypeAvro.TEMPERATURE);
                 builder.setPayload(TemperatureSensorAvro.newBuilder()
                         .setTemperatureF(tempEvent.getTemperatureF())
                         .setTemperatureC(tempEvent.getTemperatureC())

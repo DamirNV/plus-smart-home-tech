@@ -17,6 +17,7 @@ public class HubEventMapper {
         switch (event.getType()) {
             case DEVICE_ADDED:
                 DeviceAddedEvent deviceAdded = (DeviceAddedEvent) event;
+                builder.setEventType(HubEventTypeAvro.DEVICE_ADDED);
                 builder.setPayload(DeviceAddedEventAvro.newBuilder()
                         .setId(deviceAdded.getId())
                         .setType(mapDeviceType(deviceAdded.getDeviceType()))
@@ -25,6 +26,7 @@ public class HubEventMapper {
 
             case DEVICE_REMOVED:
                 DeviceRemovedEvent deviceRemoved = (DeviceRemovedEvent) event;
+                builder.setEventType(HubEventTypeAvro.DEVICE_REMOVED);
                 builder.setPayload(DeviceRemovedEventAvro.newBuilder()
                         .setId(deviceRemoved.getId())
                         .build());
@@ -32,6 +34,7 @@ public class HubEventMapper {
 
             case SCENARIO_ADDED:
                 ScenarioAddedEvent scenarioAdded = (ScenarioAddedEvent) event;
+                builder.setEventType(HubEventTypeAvro.SCENARIO_ADDED);
                 builder.setPayload(ScenarioAddedEventAvro.newBuilder()
                         .setName(scenarioAdded.getName())
                         .setConditions(
@@ -49,6 +52,7 @@ public class HubEventMapper {
 
             case SCENARIO_REMOVED:
                 ScenarioRemovedEvent scenarioRemoved = (ScenarioRemovedEvent) event;
+                builder.setEventType(HubEventTypeAvro.SCENARIO_REMOVED);
                 builder.setPayload(ScenarioRemovedEventAvro.newBuilder()
                         .setName(scenarioRemoved.getName())
                         .build());
