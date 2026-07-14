@@ -9,12 +9,11 @@ import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -38,21 +37,17 @@ public class KafkaEventProducer {
     }
 
     private void sendEvent(String topic, SpecificRecordBase event) {
-        log.info("📤 Начинаю отправку в топик: {}", topic);
+        log.info("Начинаю отправку в топик: {}", topic);
         try {
             byte[] data = serializeAvro(event);
-            log.info("📦 Данные сериализованы, размер: {} байт", data.length);
+            log.info("Данные сериализованы, размер: {} байт", data.length);
 
-            kafkaTemplate.send(topic, data)
-                    .whenComplete((result, ex) -> {
-                        if (ex == null) {
-                            log.info("✅ Успешно отправлено в топик: {}", topic);
-                        } else {
-                            log.error("❌ Ошибка отправки в топик {}: {}", topic, ex.getMessage(), ex);
-                        }
-                    });
+            kafkaTemplate.send(topic, data).get(5, TimeUnit.SECONDS);
+
+            log.info("Успешно отправлено в топик: {}", topic);
         } catch (Exception e) {
-            log.error("❌ Ошибка при отправке: {}", e.getMessage(), e);
+            log.error("Ошибка при отправке в топик {}: {}", topic, e.getMessage(), e);
+            throw new RuntimeException("Ошибка отправки в Kafka", e);
         }
     }
 
