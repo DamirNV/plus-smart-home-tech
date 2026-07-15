@@ -22,16 +22,16 @@ public class HubController {
 
     @PostMapping
     public void collectHubEvent(@Valid @RequestBody HubEvent event) {
-        log.info("🔵 ПОЛУЧЕНО СОБЫТИЕ ОТ ХАБА: {}", event);
+        log.info("ПОЛУЧЕНО СОБЫТИЕ ОТ ХАБА: {}", event);
 
         try {
             var avroEvent = hubEventMapper.toAvro(event);
-            log.info("🟡 СКОНВЕРТИРОВАНО В AVRO: {}", avroEvent);
+            log.info("СКОНВЕРТИРОВАНО В AVRO: {}", avroEvent);
 
             kafkaEventProducer.sendHubEvent(avroEvent);
-            log.info("✅ СОБЫТИЕ УСПЕШНО ОТПРАВЛЕНО В KAFKA");
+            log.info("СОБЫТИЕ УСПЕШНО ОТПРАВЛЕНО В KAFKA");
         } catch (Exception e) {
-            log.error("❌ ОШИБКА ПРИ ОБРАБОТКЕ: {}", e.getMessage(), e);
+            log.error("ОШИБКА ПРИ ОБРАБОТКЕ: {}", e.getMessage(), e);
             throw new RuntimeException("Ошибка при обработке события хаба", e);
         }
     }

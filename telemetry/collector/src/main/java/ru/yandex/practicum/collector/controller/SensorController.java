@@ -22,16 +22,16 @@ public class SensorController {
 
     @PostMapping
     public void collectSensorEvent(@Valid @RequestBody SensorEvent event) {
-        log.info("🔵 ПОЛУЧЕНО СОБЫТИЕ ОТ ДАТЧИКА: {}", event);
+        log.info("ПОЛУЧЕНО СОБЫТИЕ ОТ ДАТЧИКА: {}", event);
 
         try {
             var avroEvent = sensorEventMapper.toAvro(event);
-            log.info("🟡 СКОНВЕРТИРОВАНО В AVRO: {}", avroEvent);
+            log.info("СКОНВЕРТИРОВАНО В AVRO: {}", avroEvent);
 
             kafkaEventProducer.sendSensorEvent(avroEvent);
-            log.info("✅ СОБЫТИЕ УСПЕШНО ОТПРАВЛЕНО В KAFKA");
+            log.info("СОБЫТИЕ УСПЕШНО ОТПРАВЛЕНО В KAFKA");
         } catch (Exception e) {
-            log.error("❌ ОШИБКА ПРИ ОБРАБОТКЕ: {}", e.getMessage(), e);
+            log.error("ОШИБКА ПРИ ОБРАБОТКЕ: {}", e.getMessage(), e);
             throw new RuntimeException("Ошибка при обработке события датчика", e);
         }
     }

@@ -11,8 +11,7 @@ public class CollectorApplication {
     private static final Logger log = LoggerFactory.getLogger(CollectorApplication.class);
 
     public static void main(String[] args) {
-        log.info("🚀 ЗАПУСК COLLECTOR APPLICATION 🚀");
+        log.info("Запуск Collector Application");
         SpringApplication.run(CollectorApplication.class, args);
-        log.info("✅ COLLECTOR APPLICATION УСПЕШНО ЗАПУЩЕН");
     }
 }

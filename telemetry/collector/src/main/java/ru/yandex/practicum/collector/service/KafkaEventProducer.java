@@ -37,10 +37,10 @@ public class KafkaEventProducer {
     }
 
     private void sendEvent(String topic, SpecificRecordBase event) {
-        log.info("Начинаю отправку в топик: {}", topic);
+        log.debug("Начинаю отправку в топик: {}", topic);
         try {
             byte[] data = serializeAvro(event);
-            log.info("Данные сериализованы, размер: {} байт", data.length);
+            log.debug("Данные сериализованы, размер: {} байт", data.length);
 
             kafkaTemplate.send(topic, data).get(5, TimeUnit.SECONDS);
 
