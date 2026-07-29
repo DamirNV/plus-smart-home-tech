@@ -6,6 +6,10 @@ spring:
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
   jpa:
     hibernate:
       ddl-auto: validate
@@ -16,7 +20,6 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
-    # Консьюмер для событий хабов
     consumer:
       hub-events:
         group-id: analyzer-hub-events-group
@@ -24,7 +27,6 @@ spring:
         enable-auto-commit: false
         max-poll-records: 100
         topic: telemetry.hubs.v1
-      # Консьюмер для снапшотов
       snapshots:
         group-id: analyzer-snapshots-group
         auto-offset-reset: earliest
@@ -32,7 +34,6 @@ spring:
         max-poll-records: 50
         topic: telemetry.snapshots.v1
 
-# Конфигурация gRPC клиента для Hub Router
 grpc:
   client:
     hub-router:
