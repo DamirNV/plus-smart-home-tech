@@ -8,7 +8,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate # Используем validate, так как структуру создаем скриптом
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -16,8 +16,23 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    # Консьюмер для событий хабов
+    consumer:
+      hub-events:
+        group-id: analyzer-hub-events-group
+        auto-offset-reset: earliest
+        enable-auto-commit: false
+        max-poll-records: 100
+        topic: telemetry.hubs.v1
+      # Консьюмер для снапшотов
+      snapshots:
+        group-id: analyzer-snapshots-group
+        auto-offset-reset: earliest
+        enable-auto-commit: false
+        max-poll-records: 50
+        topic: telemetry.snapshots.v1
 
-# Конфигурация gRPC клиента для Hub Router (из ТЗ)
+# Конфигурация gRPC клиента для Hub Router
 grpc:
   client:
     hub-router:
