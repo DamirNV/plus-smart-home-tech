@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="
+             http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>ru.yandex.practicum</groupId>
         <artifactId>serialization</artifactId>
@@ -10,20 +15,29 @@
     </parent>
 
     <artifactId>proto-schemas</artifactId>
+    <packaging>jar</packaging>
+
+    <properties>
+        <grpc.version>1.63.0</grpc.version>
+        <protobuf.version>3.23.4</protobuf.version>
+    </properties>
 
     <dependencies>
+        <!-- Классы для создания gRPC-клиентов и серверов -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
+            <version>${grpc.version}</version>
         </dependency>
 
+        <!-- Поддержка сообщений Protobuf в gRPC -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
+            <version>${grpc.version}</version>
         </dependency>
 
-        <!-- Until gRPC generator library moves to generated jakarta instead of javax -->
-        <!-- https://github.com/grpc/grpc-java/issues/9179 -->
+        <!-- Нужна для аннотации Generated в сгенерированном gRPC-коде -->
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
@@ -39,6 +53,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
 
+            <!-- Генерирует Java-классы из .proto-файлов -->
             <plugin>
                 <groupId>io.github.ascopes</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
@@ -46,6 +61,7 @@
                 <configuration>
                     <protocVersion>${protobuf.version}</protocVersion>
 
+                    <!-- Дополнительно генерирует классы gRPC-сервиса и stub -->
                     <binaryMavenPlugins>
                         <binaryMavenPlugin>
                             <groupId>io.grpc</groupId>
@@ -64,20 +80,26 @@
                 </executions>
             </plugin>
 
+            <!-- Добавляет сгенерированные классы в исходники Maven -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.5.0</version>
+
                 <executions>
                     <execution>
-                        <id>add-source</id>
+                        <id>add-generated-protobuf-sources</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+
                         <configuration>
                             <sources>
-                                <source>${project.build.directory}/generated-sources/protobuf</source>
+                                <source>
+                                    ${project.build.directory}/generated-sources/protobuf
+                                </source>
                             </sources>
                         </configuration>
                     </execution>
@@ -85,4 +107,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: analyzer
+  datasource:
+    url: jdbc:postgresql://localhost:5432/analyzer_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate # Используем validate, так как структуру создаем скриптом
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+# Конфигурация gRPC клиента для Hub Router (из ТЗ)
+grpc:
+  client:
+    hub-router:
+      address: 'static://localhost:59090'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+logging:
+  level:
+    ru.yandex.practicum: DEBUG
+    net.devh.boot.grpc: DEBUG
