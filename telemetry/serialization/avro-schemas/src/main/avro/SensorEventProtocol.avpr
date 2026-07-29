@@ -62,6 +62,36 @@
           ]
         }
       ]
+    },
+    {
+      "type": "record",
+      "name": "DeviceStateAvro",
+      "fields": [
+        { "name": "id", "type": "string" },
+        {
+          "name": "payload",
+          "type": [
+            "null",
+            "ClimateSensorAvro",
+            "LightSensorAvro",
+            "MotionSensorAvro",
+            "SwitchSensorAvro",
+            "TemperatureSensorAvro"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "SnapshotAvro",
+      "fields": [
+        { "name": "hub_id", "type": "string" },
+        { "name": "timestamp", "type": "long" },
+        {
+          "name": "devices",
+          "type": { "type": "array", "items": "DeviceStateAvro" }
+        }
+      ]
     }
   ],
   "messages": {}
