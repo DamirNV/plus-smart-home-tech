@@ -101,7 +101,7 @@ public class HubEventService {
             Condition condition = Condition.builder()
                     .type(conditionAvro.getType().name())
                     .operation(conditionAvro.getOperation().name())
-                    .value(conditionAvro.getValue() instanceof Integer ? (Integer) conditionAvro.getValue() : null)
+                    .value(normalizeConditionValue(conditionAvro.getValue()))
                     .build();
             condition = conditionRepository.save(condition);
 
