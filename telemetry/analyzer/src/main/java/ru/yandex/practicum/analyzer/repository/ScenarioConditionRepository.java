@@ -8,7 +8,14 @@ import ru.yandex.practicum.analyzer.model.ScenarioConditionId;
 import java.util.List;
 
 @Repository
-public interface ScenarioConditionRepository extends JpaRepository<ScenarioCondition, ScenarioConditionId> {
+public interface ScenarioConditionRepository
+        extends JpaRepository<ScenarioCondition, ScenarioConditionId> {
+
     List<ScenarioCondition> findByScenarioId(Long scenarioId);
+
+    List<ScenarioCondition> findBySensorId(String sensorId);
+
     void deleteByScenarioId(Long scenarioId);
+
+    void deleteBySensorId(String sensorId);
 }
