@@ -1,74 +1,112 @@
 package ru.yandex.practicum.analyzer.processor;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.WakeupException;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.analyzer.config.KafkaConsumerProperties;
-import ru.yandex.practicum.analyzer.serialization.AvroDeserializer;
 import ru.yandex.practicum.analyzer.service.HubEventService;
 import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 
 import java.time.Duration;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class HubEventProcessor implements Runnable {
 
     private final KafkaConsumerProperties properties;
-    private final AvroDeserializer deserializer;
     private final HubEventService hubEventService;
-    private final org.springframework.kafka.core.ConsumerFactory<String, byte[]> hubEventsConsumerFactory;
+    private final ConsumerFactory<String, HubEventAvro> consumerFactory;
 
-    private volatile boolean running = true;
+    private volatile Consumer<String, HubEventAvro> consumer;
+
+    public HubEventProcessor(
+            KafkaConsumerProperties properties,
+            HubEventService hubEventService,
+            @Qualifier("hubEventsConsumerFactory")
+            ConsumerFactory<String, HubEventAvro> consumerFactory
+    ) {
+        this.properties = properties;
+        this.hubEventService = hubEventService;
+        this.consumerFactory = consumerFactory;
+    }
 
     @Override
     public void run() {
-        log.info("Запуск HubEventProcessor");
+        KafkaConsumerProperties.ConsumerSettings settings =
+                properties.getHubEvents();
 
-        try (KafkaConsumer<String, byte[]> consumer =
-                (KafkaConsumer<String, byte[]>) hubEventsConsumerFactory.createConsumer()) {
+        try (Consumer<String, HubEventAvro> localConsumer =
+                     consumerFactory.createConsumer()) {
 
-            String topic = properties.getHubEvents().getTopic();
-            consumer.subscribe(Collections.singletonList(topic));
-            log.info("Подписались на топик: {}", topic);
+            consumer = localConsumer;
+            localConsumer.subscribe(List.of(settings.getTopic()));
 
-            while (running) {
-                ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(1000));
+            while (true) {
+                ConsumerRecords<String, HubEventAvro> records =
+                        localConsumer.poll(
+                                Duration.ofMillis(
+                                        settings.getPollTimeoutMs()
+                                )
+                        );
 
-                if (records.isEmpty()) {
-                    continue;
-                }
+                boolean succeeded = true;
+                Map<TopicPartition, Long> batchStartOffsets =
+                        new HashMap<>();
 
-                for (ConsumerRecord<String, byte[]> record : records) {
+                records.forEach(record ->
+                        batchStartOffsets.putIfAbsent(
+                                new TopicPartition(
+                                        record.topic(),
+                                        record.partition()
+                                ),
+                                record.offset()
+                        )
+                );
+
+                for (ConsumerRecord<String, HubEventAvro> record
+                        : records) {
                     try {
-                        HubEventAvro event = deserializer.deserialize(record.value(), HubEventAvro.class);
-                        log.debug("Получено событие хаба: hubId={}, type={}",
-                                event.getHubId(), event.getPayload().getClass().getSimpleName());
-
-                        hubEventService.processHubEvent(event);
+                        hubEventService.processHubEvent(record.value());
                     } catch (Exception e) {
-                        log.error("Ошибка обработки события хаба из offset {}", record.offset(), e);
+                        succeeded = false;
+
+                        batchStartOffsets.forEach(localConsumer::seek);
+
+                        log.error(
+                                "Ошибка обработки события хаба, offset={}",
+                                record.offset(),
+                                e
+                        );
+
+                        break;
                     }
                 }
 
-                // Фиксируем смещения после обработки батча
-                consumer.commitSync();
-                log.debug("Зафиксировано {} сообщений из топика {}", records.count(), topic);
+                if (succeeded && !records.isEmpty()) {
+                    localConsumer.commitSync();
+                }
             }
-        } catch (Exception e) {
-            log.error("Ошибка в цикле обработки событий хабов", e);
-        } finally {
+        } catch (WakeupException e) {
             log.info("HubEventProcessor остановлен");
+        } finally {
+            consumer = null;
         }
     }
 
     public void shutdown() {
-        log.info("Запрос на остановку HubEventProcessor");
-        running = false;
+        Consumer<String, HubEventAvro> current = consumer;
+
+        if (current != null) {
+            current.wakeup();
+        }
     }
 }
