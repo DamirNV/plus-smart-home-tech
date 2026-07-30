@@ -18,7 +18,7 @@ case "$BRANCH" in
     TEST_SCRIPT="$SCRIPTS_PATH/2-collector-grpc-tests.sh"
     ;;
   3-aggregator)
-    TEST_SCRIPT="$SCRIPTS_PATH/3-aggregatorr-tests.sh"
+    TEST_SCRIPT="$SCRIPTS_PATH/3-aggregator-tests.sh"
     ;;
   4-analyzer)
     TEST_SCRIPT="$SCRIPTS_PATH/4-analyzer-tests.sh"
