@@ -5,6 +5,7 @@ import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorStateAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -17,11 +18,14 @@ public class SnapshotService {
             new ConcurrentHashMap<>();
 
     public Optional<SensorsSnapshotAvro> updateState(SensorEventAvro event) {
+        Instant eventTimestamp =
+                Instant.ofEpochMilli(event.getTimestamp());
+
         SensorsSnapshotAvro snapshot = snapshots.computeIfAbsent(
                 event.getHubId(),
                 hubId -> SensorsSnapshotAvro.newBuilder()
                         .setHubId(hubId)
-                        .setTimestamp(event.getTimestamp())
+                        .setTimestamp(eventTimestamp)
                         .setSensorsState(new HashMap<>())
                         .build()
         );
@@ -31,7 +35,7 @@ public class SnapshotService {
 
         if (oldState != null) {
             boolean eventIsNotNewer =
-                    event.getTimestamp() <= oldState.getTimestamp();
+                    !eventTimestamp.isAfter(oldState.getTimestamp());
 
             boolean payloadDidNotChange =
                     oldState.getData().equals(event.getPayload());
@@ -47,14 +51,14 @@ public class SnapshotService {
         newStates.put(
                 event.getId(),
                 SensorStateAvro.newBuilder()
-                        .setTimestamp(event.getTimestamp())
+                        .setTimestamp(eventTimestamp)
                         .setData(event.getPayload())
                         .build()
         );
 
         SensorsSnapshotAvro updated =
                 SensorsSnapshotAvro.newBuilder(snapshot)
-                        .setTimestamp(event.getTimestamp())
+                        .setTimestamp(eventTimestamp)
                         .setSensorsState(newStates)
                         .build();
 
