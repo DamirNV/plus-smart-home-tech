@@ -31,7 +31,7 @@ public class SnapshotService {
 
         if (oldState != null) {
             boolean eventIsNotNewer =
-                    !event.getTimestamp().isAfter(oldState.getTimestamp());
+                    event.getTimestamp() <= oldState.getTimestamp();
 
             boolean payloadDidNotChange =
                     oldState.getData().equals(event.getPayload());
