@@ -1,68 +1,113 @@
 package ru.yandex.practicum.analyzer.processor;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.WakeupException;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.analyzer.config.KafkaConsumerProperties;
-import ru.yandex.practicum.analyzer.serialization.AvroDeserializer;
 import ru.yandex.practicum.analyzer.service.SnapshotProcessorService;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
 
 import java.time.Duration;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class SnapshotProcessor {
 
     private final KafkaConsumerProperties properties;
-    private final AvroDeserializer deserializer;
     private final SnapshotProcessorService snapshotProcessorService;
-    private final org.springframework.kafka.core.ConsumerFactory<String, byte[]>
-            snapshotsConsumerFactory;
+    private final ConsumerFactory<String, SensorsSnapshotAvro> consumerFactory;
 
-    private volatile boolean running = true;
+    private volatile Consumer<String, SensorsSnapshotAvro> consumer;
+
+    public SnapshotProcessor(
+            KafkaConsumerProperties properties,
+            SnapshotProcessorService snapshotProcessorService,
+            @Qualifier("snapshotsConsumerFactory")
+            ConsumerFactory<String, SensorsSnapshotAvro> consumerFactory
+    ) {
+        this.properties = properties;
+        this.snapshotProcessorService = snapshotProcessorService;
+        this.consumerFactory = consumerFactory;
+    }
 
     public void start() {
-        log.info("Запуск SnapshotProcessor");
+        KafkaConsumerProperties.ConsumerSettings settings =
+                properties.getSnapshots();
 
-        try (KafkaConsumer<String, byte[]> consumer =
-                     (KafkaConsumer<String, byte[]>)
-                             snapshotsConsumerFactory.createConsumer()) {
+        try (Consumer<String, SensorsSnapshotAvro> localConsumer =
+                     consumerFactory.createConsumer()) {
 
-            String topic = properties.getSnapshots().getTopic();
-            consumer.subscribe(Collections.singletonList(topic));
+            consumer = localConsumer;
+            localConsumer.subscribe(List.of(settings.getTopic()));
 
-            while (running) {
-                ConsumerRecords<String, byte[]> records =
-                        consumer.poll(Duration.ofMillis(1000));
+            while (true) {
+                ConsumerRecords<String, SensorsSnapshotAvro> records =
+                        localConsumer.poll(
+                                Duration.ofMillis(
+                                        settings.getPollTimeoutMs()
+                                )
+                        );
 
-                for (ConsumerRecord<String, byte[]> record : records) {
-                    SensorsSnapshotAvro snapshot = deserializer.deserialize(
-                            record.value(),
-                            SensorsSnapshotAvro.class
-                    );
+                boolean succeeded = true;
+                Map<TopicPartition, Long> batchStartOffsets =
+                        new HashMap<>();
 
-                    snapshotProcessorService.processSnapshot(snapshot);
+                records.forEach(record ->
+                        batchStartOffsets.putIfAbsent(
+                                new TopicPartition(
+                                        record.topic(),
+                                        record.partition()
+                                ),
+                                record.offset()
+                        )
+                );
+
+                for (ConsumerRecord<String, SensorsSnapshotAvro> record
+                        : records) {
+                    try {
+                        snapshotProcessorService.processSnapshot(
+                                record.value()
+                        );
+                    } catch (Exception e) {
+                        succeeded = false;
+
+                        batchStartOffsets.forEach(localConsumer::seek);
+
+                        log.error(
+                                "Ошибка обработки снапшота, offset={}",
+                                record.offset(),
+                                e
+                        );
+
+                        break;
+                    }
                 }
 
-                if (!records.isEmpty()) {
-                    consumer.commitSync();
+                if (succeeded && !records.isEmpty()) {
+                    localConsumer.commitSync();
                 }
             }
-        } catch (Exception e) {
-            log.error("Ошибка в цикле обработки снапшотов", e);
-        } finally {
+        } catch (WakeupException e) {
             log.info("SnapshotProcessor остановлен");
+        } finally {
+            consumer = null;
         }
     }
 
     public void shutdown() {
-        log.info("Запрос на остановку SnapshotProcessor");
-        running = false;
+        Consumer<String, SensorsSnapshotAvro> current = consumer;
+
+        if (current != null) {
+            current.wakeup();
+        }
     }
 }
