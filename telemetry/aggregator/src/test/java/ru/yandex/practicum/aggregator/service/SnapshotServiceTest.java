@@ -36,7 +36,7 @@ class SnapshotServiceTest {
         return SensorEventAvro.newBuilder()
                 .setId("switch-1")
                 .setHubId("hub-1")
-                .setTimestamp(timestamp)
+                .setTimestamp(timestamp.toEpochMilli())
                 .setPayload(
                         SwitchSensorAvro.newBuilder()
                                 .setState(state)
