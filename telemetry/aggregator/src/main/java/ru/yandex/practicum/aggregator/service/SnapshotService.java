@@ -34,13 +34,13 @@ public class SnapshotService {
                 snapshot.getSensorsState().get(event.getId());
 
         if (oldState != null) {
-            boolean eventIsNotNewer =
-                    !eventTimestamp.isAfter(oldState.getTimestamp());
+            boolean eventIsOlder =
+                    eventTimestamp.isBefore(oldState.getTimestamp());
 
             boolean payloadDidNotChange =
                     oldState.getData().equals(event.getPayload());
 
-            if (eventIsNotNewer || payloadDidNotChange) {
+            if (eventIsOlder || payloadDidNotChange) {
                 return Optional.empty();
             }
         }
