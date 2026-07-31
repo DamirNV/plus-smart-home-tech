@@ -2,7 +2,7 @@ spring:
   application:
     name: analyzer
   datasource:
-    url: jdbc:postgresql://localhost:5432/analyzer_db
+    url: jdbc:postgresql://localhost:5433/analyzer_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -10,6 +10,7 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+      separator: "^^^"
   jpa:
     hibernate:
       ddl-auto: validate

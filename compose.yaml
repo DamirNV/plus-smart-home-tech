@@ -38,7 +38,7 @@ services:
     hostname: postgres
     container_name: analyzer-postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: analyzer_db
       POSTGRES_USER: postgres
