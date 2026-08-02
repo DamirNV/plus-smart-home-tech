@@ -28,6 +28,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -211,52 +213,76 @@ public class HubEventService {
                         .toList()
         );
 
-        for (ScenarioConditionAvro source
-                : scenarioAdded.getConditions()) {
+        Map<Condition, ScenarioConditionAvro> conditionsBySource =
+                new LinkedHashMap<>();
 
-            Condition condition =
-                    conditionRepository.save(
-                            Condition.builder()
-                                    .type(source.getType().name())
-                                    .operation(
-                                            source.getOperation().name()
-                                    )
-                                    .value(
-                                            normalizeConditionValue(
-                                                    source.getValue()
-                                            )
-                                    )
-                                    .build()
-                    );
+        scenarioAdded.getConditions().forEach(source ->
+                conditionsBySource.put(
+                        Condition.builder()
+                                .type(source.getType().name())
+                                .operation(source.getOperation().name())
+                                .value(
+                                        normalizeConditionValue(
+                                                source.getValue()
+                                        )
+                                )
+                                .build(),
+                        source
+                )
+        );
 
-            scenarioConditionRepository.save(
-                    ScenarioCondition.builder()
-                            .scenarioId(scenarioId)
-                            .sensorId(source.getSensorId())
-                            .conditionId(condition.getId())
-                            .build()
-            );
-        }
+        List<Condition> conditions =
+                conditionRepository.saveAll(
+                        conditionsBySource.keySet()
+                );
 
-        for (DeviceActionAvro source
-                : scenarioAdded.getActions()) {
+        scenarioConditionRepository.saveAll(
+                conditions.stream()
+                        .map(condition -> {
+                            ScenarioConditionAvro source =
+                                    conditionsBySource.get(condition);
 
-            Action action =
-                    actionRepository.save(
-                            Action.builder()
-                                    .type(source.getType().name())
-                                    .value(source.getValue())
-                                    .build()
-                    );
+                            return ScenarioCondition.builder()
+                                    .scenarioId(scenarioId)
+                                    .sensorId(source.getSensorId())
+                                    .conditionId(condition.getId())
+                                    .build();
+                        })
+                        .toList()
+        );
 
-            scenarioActionRepository.save(
-                    ScenarioAction.builder()
-                            .scenarioId(scenarioId)
-                            .sensorId(source.getSensorId())
-                            .actionId(action.getId())
-                            .build()
-            );
-        }
+        Map<Action, DeviceActionAvro> actionsBySource =
+                new LinkedHashMap<>();
+
+        scenarioAdded.getActions().forEach(source ->
+                actionsBySource.put(
+                        Action.builder()
+                                .type(source.getType().name())
+                                .value(source.getValue())
+                                .build(),
+                        source
+                )
+        );
+
+        List<Action> actions =
+                actionRepository.saveAll(
+                        actionsBySource.keySet()
+                );
+
+        scenarioActionRepository.saveAll(
+                actions.stream()
+                        .map(action -> {
+                            DeviceActionAvro source =
+                                    actionsBySource.get(action);
+
+                            return ScenarioAction.builder()
+                                    .scenarioId(scenarioId)
+                                    .sensorId(source.getSensorId())
+                                    .actionId(action.getId())
+                                    .build();
+                        })
+                        .toList()
+        );
     }
 
     private Integer normalizeConditionValue(Object value) {
