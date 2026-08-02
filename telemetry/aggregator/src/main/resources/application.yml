@@ -4,21 +4,21 @@ spring:
 
 aggregator:
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${AGGREGATOR_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      client-id: aggregator-consumer
-      group-id: aggregator-group
-      topic: telemetry.sensors.v1
-      auto-offset-reset: earliest
-      enable-auto-commit: false
-      max-poll-records: 100
-      poll-timeout-ms: 1000
+      client-id: ${AGGREGATOR_KAFKA_CONSUMER_CLIENT_ID:aggregator-consumer}
+      group-id: ${AGGREGATOR_KAFKA_CONSUMER_GROUP_ID:aggregator-group}
+      topic: ${AGGREGATOR_KAFKA_CONSUMER_TOPIC:telemetry.sensors.v1}
+      auto-offset-reset: ${AGGREGATOR_KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: ${AGGREGATOR_KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
+      max-poll-records: ${AGGREGATOR_KAFKA_CONSUMER_MAX_POLL_RECORDS:100}
+      poll-timeout-ms: ${AGGREGATOR_KAFKA_CONSUMER_POLL_TIMEOUT_MS:1000}
     producer:
-      client-id: aggregator-producer
-      topic: telemetry.snapshots.v1
-      acks: all
-      retries: 5
-      enable-idempotence: true
+      client-id: ${AGGREGATOR_KAFKA_PRODUCER_CLIENT_ID:aggregator-producer}
+      topic: ${AGGREGATOR_KAFKA_PRODUCER_TOPIC:telemetry.snapshots.v1}
+      acks: ${AGGREGATOR_KAFKA_PRODUCER_ACKS:all}
+      retries: ${AGGREGATOR_KAFKA_PRODUCER_RETRIES:5}
+      enable-idempotence: ${AGGREGATOR_KAFKA_PRODUCER_ENABLE_IDEMPOTENCE:true}
 
 logging:
   level:

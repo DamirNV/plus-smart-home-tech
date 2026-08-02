@@ -16,22 +16,22 @@ public class AggregatorKafkaProperties {
     @Getter
     @Setter
     public static class Consumer {
-        private String clientId = "aggregator-consumer";
-        private String groupId = "aggregator-group";
-        private String topic = "telemetry.sensors.v1";
-        private String autoOffsetReset = "earliest";
-        private boolean enableAutoCommit = false;
-        private int maxPollRecords = 100;
-        private long pollTimeoutMs = 1000;
+        private String clientId;
+        private String groupId;
+        private String topic;
+        private String autoOffsetReset;
+        private boolean enableAutoCommit;
+        private int maxPollRecords;
+        private long pollTimeoutMs;
     }
 
     @Getter
     @Setter
     public static class Producer {
-        private String clientId = "aggregator-producer";
-        private String topic = "telemetry.snapshots.v1";
-        private String acks = "all";
-        private int retries = 5;
-        private boolean enableIdempotence = true;
+        private String clientId;
+        private String topic;
+        private String acks;
+        private int retries;
+        private boolean enableIdempotence;
     }
 }
