@@ -25,3 +25,7 @@ logging:
   level:
     ru.yandex.practicum: DEBUG
     org.springframework.kafka: DEBUG
+
+grpc:
+  server:
+    port: 59091
