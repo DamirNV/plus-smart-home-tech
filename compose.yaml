@@ -33,3 +33,14 @@ services:
                              --partitions 1 --replication-factor 1 --if-not-exists \
                              --bootstrap-server kafka:29092'"
     init: true
+  postgres:
+    image: postgres:16-alpine
+    hostname: postgres
+    container_name: analyzer-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: analyzer_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: unless-stopped

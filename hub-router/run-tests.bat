@@ -7,14 +7,14 @@ for /f "tokens=*" %%b in ('git rev-parse --abbrev-ref HEAD') do set BRANCH=%%b
 echo Текущая ветка: %BRANCH%
 echo --------------------------
 
-set SCRIPTS_PATH=scripts\windows
+set "SCRIPTS_PATH=%~dp0scripts\windows"
 
 if "%BRANCH%"=="1-collector-json" (
     set TEST_SCRIPT=%SCRIPTS_PATH%\1-collector-json-tests.bat
 ) else if "%BRANCH%"=="2-collector-grpc" (
     set TEST_SCRIPT=%SCRIPTS_PATH%\2-collector-grpc-tests.bat
 ) else if "%BRANCH%"=="3-aggregator" (
-    set TEST_SCRIPT=%SCRIPTS_PATH%\3-aggregatorr-tests.bat
+    set TEST_SCRIPT=%SCRIPTS_PATH%\3-aggregator-tests.bat
 ) else if "%BRANCH%"=="4-analyzer" (
     set TEST_SCRIPT=%SCRIPTS_PATH%\4-analyzer-tests.bat
 ) else (
