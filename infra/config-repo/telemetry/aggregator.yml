@@ -1,0 +1,4 @@
+aggregator:
+  kafka:
+    consumer:
+      poll-timeout: 100ms
