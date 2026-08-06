@@ -12,6 +12,11 @@
     <artifactId>analyzer</artifactId>
 
     <dependencies>
+        <!-- Клиент Spring Cloud Config -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-config</artifactId>
+        </dependency>
         <!-- Spring Boot Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
