@@ -58,7 +58,9 @@ public class ProductService {
         product.setName(request.name());
         product.setDescription(request.description());
         product.setPrice(request.price());
-        product.setCategory(categoryService.findEntity(request.categoryId()));
+        if (request.categoryId() != null) {
+            product.setCategory(categoryService.findEntity(request.categoryId()));
+        }
         product.setImageUrl(request.imageUrl());
         product.setActive(true);
 
@@ -82,7 +84,9 @@ public class ProductService {
         }
 
         if (request.categoryId() != null) {
+            if (request.categoryId() != null) {
             product.setCategory(categoryService.findEntity(request.categoryId()));
+        }
         }
 
         if (request.imageUrl() != null) {
@@ -107,7 +111,9 @@ public class ProductService {
                 product.getName(),
                 product.getDescription(),
                 product.getPrice(),
-                categoryService.toDto(product.getCategory()),
+                product.getCategory() == null
+                        ? null
+                        : categoryService.toDto(product.getCategory()),
                 product.getImageUrl(),
                 product.isActive()
         );
