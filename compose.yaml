@@ -44,3 +44,36 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     restart: unless-stopped
+
+  product-postgres:
+    image: postgres:16-alpine
+    container_name: product-postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: unless-stopped
+
+  inventory-postgres:
+    image: postgres:16-alpine
+    container_name: inventory-postgres
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: unless-stopped
+
+  order-postgres:
+    image: postgres:16-alpine
+    container_name: order-postgres
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: unless-stopped
