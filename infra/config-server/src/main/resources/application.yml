@@ -13,3 +13,11 @@ spring:
           search-locations:
             - file:./infra/config-repo
             - file:./infra/config-repo/telemetry
+            - file:./infra/config-repo/commerce
+            - file:../config-repo
+            - file:../config-repo/telemetry
+            - file:../config-repo/commerce
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
