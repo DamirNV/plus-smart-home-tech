@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: api-gateway-test
+
+  cloud:
+    config:
+      enabled: false
+
+    discovery:
+      enabled: false
+
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+
+      routes:
+        - id: test-backend
+          uri: forward:/test-backend
+          predicates:
+            - Path=/api/**
+
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowed-origins:
+              - http://localhost:8443
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers:
+              - '*'
+            exposed-headers:
+              - Location
+            allow-credentials: true
+            max-age: 3600
+
+eureka:
+  client:
+    enabled: false
+
+app:
+  security:
+    users:
+      - username: ivan
+        password: ivan
+        roles:
+          - USER
+
+      - username: anna
+        password: anna
+        roles:
+          - USER
+          - ADMIN
