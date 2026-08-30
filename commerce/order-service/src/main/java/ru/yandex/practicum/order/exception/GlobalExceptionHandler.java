@@ -14,29 +14,66 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFound(NotFoundException e) {
         log.warn("Ресурс не найден: {}", e.getMessage());
-        return new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage());
+
+        return new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(OrderProcessingException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ErrorResponse handleOrderProcessing(
+            OrderProcessingException e
+    ) {
+        log.warn("Не удалось обработать заказ: {}", e.getMessage());
+
+        return new ErrorResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                e.getMessage()
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidation(MethodArgumentNotValidException e) {
+    public ErrorResponse handleValidation(
+            MethodArgumentNotValidException e
+    ) {
         Map<String, String> errors = new HashMap<>();
-        e.getBindingResult().getFieldErrors()
-                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+
+        e.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
+
         log.warn("Ошибка валидации: {}", errors);
-        return new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Ошибка валидации", errors);
+
+        return new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Ошибка валидации",
+                errors
+        );
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneral(Exception e) {
         log.error("Внутренняя ошибка сервера", e);
-        return new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Внутренняя ошибка сервера");
+
+        return new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Внутренняя ошибка сервера"
+        );
     }
 }
