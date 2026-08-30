@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderItemRequest;
+import ru.yandex.practicum.order.exception.ProductServiceUnavailableException;
 import ru.yandex.practicum.order.feign.InventoryClient;
 import ru.yandex.practicum.order.feign.ProductClient;
 import ru.yandex.practicum.order.feign.dto.ProductDto;
@@ -150,6 +151,116 @@ class OrderServiceAcceptanceTest {
                 );
     }
 
+    @Test
+    void shouldPersistPendingOrderWhenProductServiceUnavailable() throws Exception {
+        when(productClient.getProductById(77L))
+                .thenThrow(
+                        new ProductServiceUnavailableException(
+                                77L,
+                                new RuntimeException("timeout")
+                        )
+                );
+
+        CreateOrderRequest request = new CreateOrderRequest(
+                "Pending Buyer",
+                "pending-buyer@example.com",
+                List.of(
+                        new OrderItemRequest(77L, 2)
+                )
+        );
+
+        MvcResult createResponse =
+                postJson("/api/orders", request);
+
+        assertThat(status(createResponse))
+                .as("При технической недоступности product-service заказ должен быть принят")
+                .isEqualTo(201);
+
+        Map<String, Object> created =
+                readMap(createResponse);
+
+        Long orderId =
+                asLong(created.get("id"));
+
+        assertThat(orderId)
+                .isNotNull();
+
+        assertThat(created.get("status"))
+                .isEqualTo("PENDING_CONFIRMATION");
+
+        assertThat(created.get("statusDetails"))
+                .isNotNull();
+
+        assertThat(created.get("statusDetails").toString())
+                .isNotBlank();
+
+        assertThat(asDecimal(created.get("totalPrice")))
+                .isEqualByComparingTo(BigDecimal.ZERO);
+
+        List<Map<String, Object>> createdItems =
+                (List<Map<String, Object>>) created.get("items");
+
+        assertThat(createdItems)
+                .hasSize(1);
+
+        Map<String, Object> createdItem =
+                createdItems.get(0);
+
+        assertThat(asLong(createdItem.get("productId")))
+                .isEqualTo(77L);
+
+        assertThat(createdItem.get("productName").toString())
+                .contains("#77");
+
+        assertThat(asDecimal(createdItem.get("price")))
+                .isEqualByComparingTo(BigDecimal.ZERO);
+
+        assertThat(((Number) createdItem.get("quantity")).intValue())
+                .isEqualTo(2);
+
+        MvcResult byIdResponse =
+                mvc.perform(
+                                get(
+                                        "/api/orders/{id}",
+                                        orderId
+                                )
+                        )
+                        .andReturn();
+
+        assertThat(status(byIdResponse))
+                .isEqualTo(200);
+
+        Map<String, Object> persisted =
+                readMap(byIdResponse);
+
+        assertThat(persisted.get("status"))
+                .as("Статус PENDING_CONFIRMATION должен быть сохранён в базе")
+                .isEqualTo("PENDING_CONFIRMATION");
+
+        assertThat(asDecimal(persisted.get("totalPrice")))
+                .isEqualByComparingTo(BigDecimal.ZERO);
+
+        List<Map<String, Object>> persistedItems =
+                (List<Map<String, Object>>) persisted.get("items");
+
+        assertThat(persistedItems)
+                .hasSize(1);
+
+        assertThat(
+                asLong(
+                        persistedItems
+                                .get(0)
+                                .get("productId")
+                )
+        ).isEqualTo(77L);
+
+        assertThat(
+                persistedItems
+                        .get(0)
+                        .get("productName")
+                        .toString()
+        ).contains("#77");
+    }
     @Test
     void shouldReturnBadRequestForInvalidOrderPayload() throws Exception {
         CreateOrderRequest invalidRequest =

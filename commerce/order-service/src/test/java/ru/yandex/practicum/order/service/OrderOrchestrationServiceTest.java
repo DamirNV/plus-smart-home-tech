@@ -8,7 +8,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderDto;
 import ru.yandex.practicum.order.dto.OrderItemRequest;
+import ru.yandex.practicum.order.exception.InventoryServiceUnavailableException;
 import ru.yandex.practicum.order.exception.OrderProcessingException;
+import ru.yandex.practicum.order.exception.ProductServiceUnavailableException;
 import ru.yandex.practicum.order.feign.InventoryClient;
 import ru.yandex.practicum.order.feign.ProductClient;
 import ru.yandex.practicum.order.feign.dto.ProductDto;
@@ -22,6 +24,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -342,6 +345,247 @@ class OrderOrchestrationServiceTest {
 
         verifyNoInteractions(orderService);
     }
+
+    @Test
+    void shouldSavePendingOrderWhenProductServiceUnavailable() {
+        CreateOrderRequest request = request(
+                new OrderItemRequest(1L, 2),
+                new OrderItemRequest(2L, 1)
+        );
+
+        when(productClient.getProductById(1L))
+                .thenReturn(product(
+                        1L,
+                        "Smart lamp",
+                        "100.00",
+                        true
+                ));
+
+        when(productClient.getProductById(2L))
+                .thenThrow(
+                        new ProductServiceUnavailableException(
+                                2L,
+                                new RuntimeException("timeout")
+                        )
+                );
+
+        OrderDto expected = pendingOrderDto();
+
+        when(orderService.savePendingOrder(
+                eq(request),
+                anyList(),
+                anyString()
+        )).thenReturn(expected);
+
+        OrderDto actual =
+                orchestrationService.create(request);
+
+        assertSame(expected, actual);
+
+        verify(productClient).getProductById(1L);
+        verify(productClient).getProductById(2L);
+
+        verifyNoInteractions(inventoryClient);
+
+        verify(orderService).savePendingOrder(
+                eq(request),
+                argThat(items ->
+                        items.size() == 2
+
+                                && items.get(0)
+                                        .productId()
+                                        .equals(1L)
+
+                                && items.get(0)
+                                        .productName()
+                                        .contains("#1")
+
+                                && items.get(0)
+                                        .price()
+                                        .compareTo(BigDecimal.ZERO) == 0
+
+                                && items.get(1)
+                                        .productId()
+                                        .equals(2L)
+
+                                && items.get(1)
+                                        .productName()
+                                        .contains("#2")
+
+                                && items.get(1)
+                                        .price()
+                                        .compareTo(BigDecimal.ZERO) == 0
+                ),
+                argThat(details ->
+                        details != null
+                                && !details.isBlank()
+                )
+        );
+
+        verify(
+                orderService,
+                never()
+        ).saveConfirmedOrder(
+                eq(request),
+                anyList()
+        );
+    }
+    @Test
+    void shouldSavePendingOrderWhenInventoryServiceUnavailable() {
+        CreateOrderRequest request = request(
+                new OrderItemRequest(1L, 2)
+        );
+
+        when(productClient.getProductById(1L))
+                .thenReturn(product(
+                        1L,
+                        "Smart lamp",
+                        "100.00",
+                        true
+                ));
+
+        when(inventoryClient.reserveStock(
+                new ReserveRequest(1L, 2)
+        )).thenThrow(
+                new InventoryServiceUnavailableException(
+                        1L,
+                        new RuntimeException("connection refused")
+                )
+        );
+
+        OrderDto expected = pendingOrderDto();
+
+        when(orderService.savePendingOrder(
+                eq(request),
+                anyList(),
+                anyString()
+        )).thenReturn(expected);
+
+        OrderDto actual =
+                orchestrationService.create(request);
+
+        assertSame(expected, actual);
+
+        verify(orderService).savePendingOrder(
+                eq(request),
+                argThat(items ->
+                        items.size() == 1
+
+                                && items.get(0)
+                                        .productId()
+                                        .equals(1L)
+
+                                && items.get(0)
+                                        .productName()
+                                        .equals("Smart lamp")
+
+                                && items.get(0)
+                                        .price()
+                                        .compareTo(
+                                                new BigDecimal("100.00")
+                                        ) == 0
+                ),
+                argThat(details ->
+                        details != null
+                                && !details.isBlank()
+                )
+        );
+
+        verify(
+                orderService,
+                never()
+        ).saveConfirmedOrder(
+                eq(request),
+                anyList()
+        );
+
+        verify(
+                inventoryClient,
+                never()
+        ).releaseStock(
+                new ReserveRequest(1L, 2)
+        );
+    }
+
+    @Test
+    void shouldCompensateReservationBeforeSavingPendingOrder() {
+        CreateOrderRequest request = request(
+                new OrderItemRequest(1L, 2),
+                new OrderItemRequest(2L, 1)
+        );
+
+        when(productClient.getProductById(1L))
+                .thenReturn(product(
+                        1L,
+                        "Smart lamp",
+                        "100.00",
+                        true
+                ));
+
+        when(productClient.getProductById(2L))
+                .thenReturn(product(
+                        2L,
+                        "Smart sensor",
+                        "50.00",
+                        true
+                ));
+
+        when(inventoryClient.reserveStock(
+                new ReserveRequest(1L, 2)
+        )).thenReturn(successfulReserve());
+
+        when(inventoryClient.reserveStock(
+                new ReserveRequest(2L, 1)
+        )).thenThrow(
+                new InventoryServiceUnavailableException(
+                        2L,
+                        new RuntimeException("timeout")
+                )
+        );
+
+        OrderDto expected = pendingOrderDto();
+
+        when(orderService.savePendingOrder(
+                eq(request),
+                anyList(),
+                anyString()
+        )).thenReturn(expected);
+
+        OrderDto actual =
+                orchestrationService.create(request);
+
+        assertSame(expected, actual);
+
+        verify(inventoryClient).releaseStock(
+                new ReserveRequest(1L, 2)
+        );
+
+        verify(orderService).savePendingOrder(
+                eq(request),
+                argThat(items ->
+                        items.size() == 2
+                                && items.get(0)
+                                        .price()
+                                        .compareTo(
+                                                new BigDecimal("100.00")
+                                        ) == 0
+                                && items.get(1)
+                                        .price()
+                                        .compareTo(
+                                                new BigDecimal("50.00")
+                                        ) == 0
+                ),
+                anyString()
+        );
+
+        verify(
+                orderService,
+                never()
+        ).saveConfirmedOrder(
+                eq(request),
+                anyList()
+        );
+    }
     private CreateOrderRequest request(
             OrderItemRequest... items
     ) {
@@ -374,6 +618,18 @@ class OrderOrchestrationServiceTest {
         );
     }
 
+    private OrderDto pendingOrderDto() {
+        return new OrderDto(
+                2L,
+                "Ivan Petrov",
+                "ivan@example.com",
+                "PENDING_CONFIRMATION",
+                BigDecimal.ZERO,
+                "Requires manual confirmation",
+                LocalDateTime.now(),
+                List.of()
+        );
+    }
     private OrderDto orderDto() {
         return new OrderDto(
                 1L,
