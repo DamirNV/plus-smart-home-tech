@@ -1,5 +1,7 @@
 package ru.yandex.practicum.order.service;
 
+import feign.FeignException;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -245,6 +247,101 @@ class OrderOrchestrationServiceTest {
         );
     }
 
+    @Test
+    void shouldMapProductNotFoundToOrderProcessingException() {
+        CreateOrderRequest request = request(
+                new OrderItemRequest(99L, 1)
+        );
+
+        FeignException exception = mock(FeignException.class);
+        when(exception.status()).thenReturn(404);
+
+        when(productClient.getProductById(99L))
+                .thenThrow(exception);
+
+        OrderProcessingException result = assertThrows(
+                OrderProcessingException.class,
+                () -> orchestrationService.create(request)
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Товар с id=99 не найден",
+                result.getMessage()
+        );
+
+        verifyNoInteractions(
+                inventoryClient,
+                orderService
+        );
+    }
+
+    @Test
+    void shouldMapInventoryNotFoundToOrderProcessingException() {
+        CreateOrderRequest request = request(
+                new OrderItemRequest(1L, 1)
+        );
+
+        when(productClient.getProductById(1L))
+                .thenReturn(product(
+                        1L,
+                        "Умная лампа",
+                        "100.00",
+                        true
+                ));
+
+        FeignException exception = mock(FeignException.class);
+        when(exception.status()).thenReturn(404);
+
+        when(inventoryClient.reserveStock(
+                new ReserveRequest(1L, 1)
+        )).thenThrow(exception);
+
+        OrderProcessingException result = assertThrows(
+                OrderProcessingException.class,
+                () -> orchestrationService.create(request)
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Складская запись для товара id=1 не найдена",
+                result.getMessage()
+        );
+
+        verifyNoInteractions(orderService);
+    }
+
+    @Test
+    void shouldMapInventoryConflictToInsufficientStock() {
+        CreateOrderRequest request = request(
+                new OrderItemRequest(1L, 5)
+        );
+
+        when(productClient.getProductById(1L))
+                .thenReturn(product(
+                        1L,
+                        "Умная лампа",
+                        "100.00",
+                        true
+                ));
+
+        FeignException exception = mock(FeignException.class);
+        when(exception.status()).thenReturn(409);
+
+        when(inventoryClient.reserveStock(
+                new ReserveRequest(1L, 5)
+        )).thenThrow(exception);
+
+        OrderProcessingException result = assertThrows(
+                OrderProcessingException.class,
+                () -> orchestrationService.create(request)
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Недостаточно товара id=1 на складе",
+                result.getMessage()
+        );
+
+        verifyNoInteractions(orderService);
+    }
     private CreateOrderRequest request(
             OrderItemRequest... items
     ) {
