@@ -62,7 +62,7 @@ public class OrderOrchestrationService {
 
             return savePendingOrder(
                     request,
-                    preparePendingItems(request, products),
+                    preparePendingItems(request),
                     PRODUCT_DEGRADED_DETAILS
             );
         }
@@ -289,35 +289,20 @@ public class OrderOrchestrationService {
     }
 
     private List<PreparedOrderItem> preparePendingItems(
-            CreateOrderRequest request,
-            Map<Long, ProductDto> products
+            CreateOrderRequest request
     ) {
         return request.items()
                 .stream()
-                .map(item -> {
-                    ProductDto product =
-                            products.get(item.productId());
-
-                    if (product != null) {
-                        return new PreparedOrderItem(
-                                product.id(),
-                                product.name(),
+                .map(item ->
+                        new PreparedOrderItem(
+                                item.productId(),
+                                "Товар #" + item.productId() + " (ожидает проверки)",
                                 item.quantity(),
-                                product.price()
-                        );
-                    }
-
-                    return new PreparedOrderItem(
-                            item.productId(),
-                            "Товар #" + item.productId()
-                                    + " (ожидает проверки)",
-                            item.quantity(),
-                            BigDecimal.ZERO
-                    );
-                })
+                                BigDecimal.ZERO
+                        )
+                )
                 .toList();
     }
-
     private void compensate(
             List<ReserveRequest> successfulReservations
     ) {

@@ -398,13 +398,11 @@ class OrderOrchestrationServiceTest {
 
                                 && items.get(0)
                                         .productName()
-                                        .equals("Smart lamp")
+                                        .contains("#1")
 
                                 && items.get(0)
                                         .price()
-                                        .compareTo(
-                                                new BigDecimal("100.00")
-                                        ) == 0
+                                        .compareTo(BigDecimal.ZERO) == 0
 
                                 && items.get(1)
                                         .productId()
@@ -432,7 +430,6 @@ class OrderOrchestrationServiceTest {
                 anyList()
         );
     }
-
     @Test
     void shouldSavePendingOrderWhenInventoryServiceUnavailable() {
         CreateOrderRequest request = request(
