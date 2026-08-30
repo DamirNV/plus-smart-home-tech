@@ -93,6 +93,31 @@ public class InventoryService {
         );
     }
 
+    @Transactional
+    public ReserveResponse release(ReserveRequest request) {
+        Inventory inventory = findByProductId(request.productId());
+
+        if (inventory.getReservedQuantity() < request.quantity()) {
+            throw new IllegalArgumentException(
+                    "Нельзя снять резерв для товара " + request.productId()
+                            + ". Зарезервировано: " + inventory.getReservedQuantity()
+                            + ", запрошено снять: " + request.quantity()
+            );
+        }
+
+        inventory.setReservedQuantity(
+                inventory.getReservedQuantity() - request.quantity()
+        );
+
+        Inventory saved = inventoryRepository.save(inventory);
+
+        return new ReserveResponse(
+                true,
+                saved.getAvailableQuantity(),
+                "Резерв успешно снят"
+        );
+    }
+
     private Inventory findByProductId(Long productId) {
         return inventoryRepository.findByProductId(productId)
                 .orElseThrow(() ->

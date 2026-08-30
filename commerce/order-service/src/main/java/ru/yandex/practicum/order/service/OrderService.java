@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderDto;
 import ru.yandex.practicum.order.dto.OrderItemDto;
-import ru.yandex.practicum.order.dto.OrderItemRequest;
+import ru.yandex.practicum.order.dto.PreparedOrderItem;
 import ru.yandex.practicum.order.entity.Order;
 import ru.yandex.practicum.order.entity.OrderItem;
 import ru.yandex.practicum.order.exception.NotFoundException;
@@ -26,29 +26,32 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderDto create(CreateOrderRequest request) {
+    public OrderDto saveConfirmedOrder(
+            CreateOrderRequest request,
+            List<PreparedOrderItem> preparedItems
+    ) {
         Order order = new Order();
         order.setCustomerName(request.customerName());
         order.setCustomerEmail(request.customerEmail());
-        order.setStatus("CREATED");
+        order.setStatus("CONFIRMED");
         order.setStatusDetails(null);
         order.setCreatedAt(LocalDateTime.now());
 
         BigDecimal totalPrice = BigDecimal.ZERO;
 
-        for (OrderItemRequest requestItem : request.items()) {
+        for (PreparedOrderItem preparedItem : preparedItems) {
             OrderItem item = new OrderItem();
 
-            item.setProductId(requestItem.productId());
-            item.setProductName(requestItem.productName());
-            item.setQuantity(requestItem.quantity());
-            item.setPrice(requestItem.price());
+            item.setProductId(preparedItem.productId());
+            item.setProductName(preparedItem.productName());
+            item.setQuantity(preparedItem.quantity());
+            item.setPrice(preparedItem.price());
 
             order.addItem(item);
 
             totalPrice = totalPrice.add(
-                    requestItem.price()
-                            .multiply(BigDecimal.valueOf(requestItem.quantity()))
+                    preparedItem.price()
+                            .multiply(BigDecimal.valueOf(preparedItem.quantity()))
             );
         }
 

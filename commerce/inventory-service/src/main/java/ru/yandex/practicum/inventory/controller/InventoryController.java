@@ -52,4 +52,11 @@ public class InventoryController {
     ) {
         return inventoryService.reserve(request);
     }
+
+    @PostMapping("/release")
+    public ReserveResponse release(
+            @Valid @RequestBody ReserveRequest request
+    ) {
+        return inventoryService.release(request);
+    }
 }
