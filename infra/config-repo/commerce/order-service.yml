@@ -37,9 +37,14 @@ resilience4j:
     configs:
       default:
         sliding-window-size: 5
+        minimum-number-of-calls: 5
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 3
+        ignore-exceptions:
+          - feign.FeignException$BadRequest
+          - feign.FeignException$NotFound
+          - feign.FeignException$Conflict
   timelimiter:
     configs:
       default:
