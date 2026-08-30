@@ -1,0 +1,21 @@
+aggregator:
+  kafka:
+    bootstrap-servers: ${AGGREGATOR_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      client-id: ${AGGREGATOR_KAFKA_CONSUMER_CLIENT_ID:aggregator-consumer}
+      group-id: ${AGGREGATOR_KAFKA_CONSUMER_GROUP_ID:aggregator-group}
+      topic: ${AGGREGATOR_KAFKA_CONSUMER_TOPIC:telemetry.sensors.v1}
+      auto-offset-reset: ${AGGREGATOR_KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: ${AGGREGATOR_KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
+      max-poll-records: ${AGGREGATOR_KAFKA_CONSUMER_MAX_POLL_RECORDS:100}
+      poll-timeout-ms: ${AGGREGATOR_KAFKA_CONSUMER_POLL_TIMEOUT_MS:1000}
+    producer:
+      client-id: ${AGGREGATOR_KAFKA_PRODUCER_CLIENT_ID:aggregator-producer}
+      topic: ${AGGREGATOR_KAFKA_PRODUCER_TOPIC:telemetry.snapshots.v1}
+      acks: ${AGGREGATOR_KAFKA_PRODUCER_ACKS:all}
+      retries: ${AGGREGATOR_KAFKA_PRODUCER_RETRIES:5}
+      enable-idempotence: ${AGGREGATOR_KAFKA_PRODUCER_ENABLE_IDEMPOTENCE:true}
+
+logging:
+  level:
+    ru.yandex.practicum: INFO

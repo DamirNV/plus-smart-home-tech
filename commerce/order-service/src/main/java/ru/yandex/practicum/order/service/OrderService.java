@@ -1,0 +1,152 @@
+package ru.yandex.practicum.order.service;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.order.dto.CreateOrderRequest;
+import ru.yandex.practicum.order.dto.OrderDto;
+import ru.yandex.practicum.order.dto.OrderItemDto;
+import ru.yandex.practicum.order.dto.PreparedOrderItem;
+import ru.yandex.practicum.order.entity.Order;
+import ru.yandex.practicum.order.entity.OrderItem;
+import ru.yandex.practicum.order.exception.NotFoundException;
+import ru.yandex.practicum.order.repository.OrderRepository;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@Transactional(readOnly = true)
+public class OrderService {
+
+    private static final String STATUS_CONFIRMED = "CONFIRMED";
+    private static final String STATUS_PENDING_CONFIRMATION = "PENDING_CONFIRMATION";
+
+    private final OrderRepository orderRepository;
+
+    public OrderService(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    @Transactional
+    public OrderDto saveConfirmedOrder(
+            CreateOrderRequest request,
+            List<PreparedOrderItem> preparedItems
+    ) {
+        return saveOrder(
+                request,
+                preparedItems,
+                STATUS_CONFIRMED,
+                null
+        );
+    }
+
+    @Transactional
+    public OrderDto savePendingOrder(
+            CreateOrderRequest request,
+            List<PreparedOrderItem> preparedItems,
+            String statusDetails
+    ) {
+        return saveOrder(
+                request,
+                preparedItems,
+                STATUS_PENDING_CONFIRMATION,
+                statusDetails
+        );
+    }
+
+    private OrderDto saveOrder(
+            CreateOrderRequest request,
+            List<PreparedOrderItem> preparedItems,
+            String status,
+            String statusDetails
+    ) {
+        Order order = new Order();
+        order.setCustomerName(request.customerName());
+        order.setCustomerEmail(request.customerEmail());
+        order.setStatus(status);
+        order.setStatusDetails(statusDetails);
+        order.setCreatedAt(LocalDateTime.now());
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (PreparedOrderItem preparedItem : preparedItems) {
+            OrderItem item = new OrderItem();
+
+            item.setProductId(preparedItem.productId());
+            item.setProductName(preparedItem.productName());
+            item.setQuantity(preparedItem.quantity());
+            item.setPrice(preparedItem.price());
+
+            order.addItem(item);
+
+            totalPrice = totalPrice.add(
+                    preparedItem.price()
+                            .multiply(
+                                    BigDecimal.valueOf(
+                                            preparedItem.quantity()
+                                    )
+                            )
+            );
+        }
+
+        order.setTotalPrice(totalPrice);
+
+        return toDto(orderRepository.save(order));
+    }
+
+    public OrderDto getById(Long id) {
+        return toDto(findEntity(id));
+    }
+
+    public List<OrderDto> getAll() {
+        return orderRepository.findAll()
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    public List<OrderDto> getByEmail(String email) {
+        return orderRepository.findAllByCustomerEmail(email)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    private Order findEntity(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Заказ не найден: " + id
+                        )
+                );
+    }
+
+    private OrderDto toDto(Order order) {
+        List<OrderItemDto> items = order.getItems()
+                .stream()
+                .map(this::toItemDto)
+                .toList();
+
+        return new OrderDto(
+                order.getId(),
+                order.getCustomerName(),
+                order.getCustomerEmail(),
+                order.getStatus(),
+                order.getTotalPrice(),
+                order.getStatusDetails(),
+                order.getCreatedAt(),
+                items
+        );
+    }
+
+    private OrderItemDto toItemDto(OrderItem item) {
+        return new OrderItemDto(
+                item.getId(),
+                item.getProductId(),
+                item.getProductName(),
+                item.getQuantity(),
+                item.getPrice()
+        );
+    }
+}

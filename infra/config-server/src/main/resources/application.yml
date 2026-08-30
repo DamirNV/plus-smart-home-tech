@@ -1,0 +1,25 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations:
+            - file:./infra/config-repo
+            - file:./infra/config-repo/telemetry
+            - file:./infra/config-repo/commerce
+            - file:./infra/config-repo/infra
+            - file:../config-repo
+            - file:../config-repo/telemetry
+            - file:../config-repo/commerce
+            - file:../config-repo/infra
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
