@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 0
 
 spring:
@@ -12,3 +12,20 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 2000
+            readTimeout: 3000
+
+          inventory-service:
+            connectTimeout: 1000
+            readTimeout: 2000
+            loggerLevel: basic
+
+logging:
+  level:
+    ru.yandex.practicum.order.feign.InventoryClient: DEBUG
