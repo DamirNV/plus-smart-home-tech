@@ -19,6 +19,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class OrderService {
 
+    private static final String STATUS_CONFIRMED = "CONFIRMED";
+    private static final String STATUS_PENDING_CONFIRMATION = "PENDING_CONFIRMATION";
+
     private final OrderRepository orderRepository;
 
     public OrderService(OrderRepository orderRepository) {
@@ -30,11 +33,39 @@ public class OrderService {
             CreateOrderRequest request,
             List<PreparedOrderItem> preparedItems
     ) {
+        return saveOrder(
+                request,
+                preparedItems,
+                STATUS_CONFIRMED,
+                null
+        );
+    }
+
+    @Transactional
+    public OrderDto savePendingOrder(
+            CreateOrderRequest request,
+            List<PreparedOrderItem> preparedItems,
+            String statusDetails
+    ) {
+        return saveOrder(
+                request,
+                preparedItems,
+                STATUS_PENDING_CONFIRMATION,
+                statusDetails
+        );
+    }
+
+    private OrderDto saveOrder(
+            CreateOrderRequest request,
+            List<PreparedOrderItem> preparedItems,
+            String status,
+            String statusDetails
+    ) {
         Order order = new Order();
         order.setCustomerName(request.customerName());
         order.setCustomerEmail(request.customerEmail());
-        order.setStatus("CONFIRMED");
-        order.setStatusDetails(null);
+        order.setStatus(status);
+        order.setStatusDetails(statusDetails);
         order.setCreatedAt(LocalDateTime.now());
 
         BigDecimal totalPrice = BigDecimal.ZERO;
@@ -51,7 +82,11 @@ public class OrderService {
 
             totalPrice = totalPrice.add(
                     preparedItem.price()
-                            .multiply(BigDecimal.valueOf(preparedItem.quantity()))
+                            .multiply(
+                                    BigDecimal.valueOf(
+                                            preparedItem.quantity()
+                                    )
+                            )
             );
         }
 
@@ -81,7 +116,9 @@ public class OrderService {
     private Order findEntity(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() ->
-                        new NotFoundException("Заказ не найден: " + id)
+                        new NotFoundException(
+                                "Заказ не найден: " + id
+                        )
                 );
     }
 
